@@ -40,7 +40,7 @@ var getPcode = function(position, setPcode, res) {
 					player.team = playerSet.split('-')[1];
 					player.position = position;
 					playerPcodeList.push(player);
-					res.write("\'" + player.name + "\'' : [" + player.code + ", \'" + player.team + "\', \'" + player.position + '\'],\n');
+					res.write("\'" + player.name + "\' : [" + player.code + ", \'" + player.team + "\', \'" + player.position + '\'],\n');
 				}
 			}
 			setPcode(playerPcodeList, position, res);

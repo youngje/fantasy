@@ -8,7 +8,8 @@ var express = require('express')
   , user = require('./routes/user')
   , http = require('http')
   , path = require('path')
-  , getPcode = require('./routes/getPcodes');
+  , getPcode = require('./routes/getPcodes')
+  , roster = require('./public/javascripts/roster');
 
 var app = express();
 
@@ -36,6 +37,7 @@ app.get('/team/:id', routes.team);
 app.get('/draft', routes.draft);
 app.get('/playerScore/:pcode', routes.get);
 app.get('/pcode/:p', getPcode.get);
+app.get('/roster', roster.oskar);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));
