@@ -35,7 +35,7 @@ app.get('/users', user.list);
 app.get('/team/:id', routes.team);
 app.get('/draft', routes.draft);
 app.get('/playerScore/:pcode', routes.get);
-app.get('/pcode', getPcode.get);
+app.get('/pcode/:p', getPcode.get);
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log("Express server listening on port " + app.get('port'));

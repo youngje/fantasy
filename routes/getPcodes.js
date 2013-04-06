@@ -1,12 +1,16 @@
 var jsdom = require('jsdom'),
 	request = require('request');
 
-var pcode = {};
+var pcodeList = {
+		pitcherPcodeList : [],
+		catcherPcodeList : [],
+		inFieldPcodeList : [],
+		outFieldPcodeList : []
+};
 
-pcode.get = function(position) {
-	var self = this;
-	self.playerPcodeList = [];
-	
+var count = 0;
+
+var getPcode = function(position, setPcode, res) {
 	var positionUri = 'http://www.koreabaseball.com/Record/PlayerSearch.aspx?position=' + position;
 	
 	request({uri: positionUri }, function(err, response, body) {	
@@ -15,51 +19,58 @@ pcode.get = function(position) {
 			console.log('Request error.');
 		}
 
-		function getPcodeListFromKBO(callback) {
-			jsdom.env({
-				html: body,
-				scripts: ['http://code.jquery.com/jquery-1.6.min.js'] 
-			}, function(err, window) {
-				//use jQuery just as in a regular HTML page
-				var $ = window.jQuery;
+		jsdom.env({
+			html: body,
+			scripts: ['http://code.jquery.com/jquery-1.6.min.js'] 
+		}, function(err, window) {
+			//use jQuery just as in a regular HTML page
+			var $ = window.jQuery;
 
-				var playerlist = $(".playerList");	
+			var playerPcodeList = [];
+			var playerlist = $(".playerList");	
 
-				var getPcode = function() {
-					var playerPcodeList = [];
-					for(var i = 0; i < playerlist.length; i++) {
-						self.list = playerlist[i].querySelectorAll("li a");
-						for(var j = 0; j < self.list.length; j++) {
-							var ahref  = self.list[j].getAttribute("href");
-							var player = {};
-							var playerSet = self.list[j].innerHTML;
-							player.pcode = ahref.substr(ahref.length-5, 5);
-							player.pname = playerSet.split('-')[0];
-							player.pteam = playerSet.split('-')[1];
-							playerPcodeList.push(player);
-							console.log(player.pcode + " " + player.pname + " " + player.pteam);
-						}
-					}
-				return playerPcodeList;
+			for(var i = 0; i < playerlist.length; i++) {
+				var list = playerlist[i].querySelectorAll("li a");
+				for(var j = 0, length = list.length; j < length; j++) {
+					var ahref  = list[j].getAttribute("href");
+					var player = {};
+					var playerSet = list[j].innerHTML;
+					player.code = ahref.substr(ahref.length-5, 5);
+					player.name = playerSet.split('-')[0];
+					player.team = playerSet.split('-')[1];
+					player.position = position;
+					playerPcodeList.push(player);
+					res.write("\'" + player.name + "\'' : [" + player.code + ", \'" + player.team + "\', \'" + player.position + '\'],\n');
 				}
-			});
-			callback(getPcode());
-		}
-		getPcodeListFromKBO(function(playerList){
-			self.playerPcodeList = playerList;
+			}
+			setPcode(playerPcodeList, position, res);
 		});
-
 	});
-}
+};
+
+var setPcode = function(playerPcodeList, position, res) {
+	switch(position) {
+		case '투' : pcodeList.pitcherPcodeList = playerPcodeList; console.log("ok1"); break;
+		case '포' : pcodeList.catcherPcodeList = playerPcodeList; console.log("ok2"); break;
+		case '내' : pcodeList.inFieldPcodeList = playerPcodeList; console.log("ok3"); break;
+		case '외' : pcodeList.outFieldPcodeList = playerPcodeList; console.log("ok4"); break;
+		default : console.log("position 값이 맞지 않음");
+	}
+	
+	res.write('\n\n\n\n\n' + pcodeList.pitcherPcodeList.length + '\n');
+	res.write(pcodeList.catcherPcodeList.length + '\n');
+	res.write(pcodeList.inFieldPcodeList.length + '\n');
+	res.write(pcodeList.outFieldPcodeList.length + '\n');
+	res.end("done");
+	// if(count < 3) {
+	// 	count ++;
+	// } else {
+	// 	res.end('done');
+	// }
+};
 
 exports.get = function(req, res) {
-	var pcodeList = {
-		pitcherPcodeList : pcode.get('투'),	 	//투수 %ED%88%AC
-		hitterPcodeList : pcode.get('포'),		//포수 %ED%8F%AC
-		inFieldPcodeList : pcode.get('내'),		//내야수 %EB%82%B4
-		outFieldPcodeList : pcode.get('외')		//외야수 %EC%99%B8
-	}
-	console.log(pcodeList);
-	res.end("done");
-}
-
+	var position = req.params.p;		// p = 투 / 포 / 내 / 외
+	console.log(position);
+	getPcode(position, setPcode, res);	 	
+};
